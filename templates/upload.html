@@ -14,9 +14,9 @@
                     <form method="POST" enctype="multipart/form-data">
                         <div class="upload-zone">
                             <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                            <h5>Choose your SD image</h5>
-                            <p class="text-muted">PNG, JPG, JPEG, or WebP files supported</p>
-                            <input type="file" name="file" class="form-control" accept=".png,.jpg,.jpeg,.webp" required>
+                            <h5>Choose your SD images</h5>
+                            <p class="text-muted">PNG, JPG, JPEG, or WebP files supported. You can select multiple files.</p>
+                            <input type="file" name="files" class="form-control" accept=".png,.jpg,.jpeg,.webp" required multiple>
                         </div>
                         
                         <div class="mb-3">
@@ -43,7 +43,7 @@
                                 <i class="fas fa-arrow-left"></i> Back to Gallery
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-upload"></i> Upload Image
+                                <i class="fas fa-upload"></i> Upload Images
                             </button>
                         </div>
                     </form>
@@ -123,20 +123,24 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (files.length > 0) {
             fileInput.files = files;
-            updateFileLabel(files[0].name);
+            updateFileLabel(files);
         }
     }
     
     // Update file input label
     fileInput.addEventListener('change', function() {
         if (this.files.length > 0) {
-            updateFileLabel(this.files[0].name);
+            updateFileLabel(this.files);
         }
     });
     
-    function updateFileLabel(filename) {
+    function updateFileLabel(files) {
         const label = uploadZone.querySelector('h5');
-        label.textContent = `Selected: ${filename}`;
+        if (files.length === 1) {
+            label.textContent = `Selected: ${files[0].name}`;
+        } else {
+            label.textContent = `Selected: ${files.length} files`;
+        }
         label.style.color = '#007bff';
     }
 });
