@@ -2,6 +2,8 @@
 
 A powerful Flask-based web application for managing, browsing, and organizing Stable Diffusion generated images with comprehensive metadata extraction and management capabilities.
 
+![dashboard](images/self-hosted-stable-diffusion-image-gallery-with-docker-v0-ceso8bpbdolf1.png)
+
 ## 🚀 Features
 
 - **Multi-format Support**: PNG, JPG, JPEG, WebP
