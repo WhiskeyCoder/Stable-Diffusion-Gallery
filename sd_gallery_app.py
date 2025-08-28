@@ -1404,8 +1404,16 @@ def index():
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 30))  # Default 30 images per page
 
+    # Build working list with original database indices for stable linking
+    working_list = []
+    for original_index, image in enumerate(db):
+        # Create a shallow copy so we can attach transient fields without mutating DB
+        item = dict(image)
+        item['_db_index'] = original_index
+        working_list.append(item)
+
     # Filter images
-    filtered_images = db
+    filtered_images = working_list
 
     if model_filter:
         filtered_images = [img for img in filtered_images if model_filter.lower() in img.get('model_name', '').lower()]
@@ -1419,6 +1427,26 @@ def index():
                            search_term.lower() in img.get('positive_prompt', '').lower() or
                            search_term.lower() in img.get('negative_prompt', '').lower() or
                            search_term.lower() in img.get('filename', '').lower()]
+
+    # Sort newest first by upload_date (fallback to filename timestamp if missing)
+    def sort_key(img):
+        date_str = img.get('upload_date')
+        if date_str:
+            try:
+                return datetime.fromisoformat(date_str)
+            except Exception:
+                pass
+        # Fallback: try to parse timestamp prefix from filename like YYYYMMDD_HHMMSS_mmm_*
+        fname = img.get('filename', '')
+        try:
+            ts = fname.split('_', 3)
+            if len(ts) >= 3:
+                return datetime.strptime('_'.join(ts[:3]), '%Y%m%d_%H%M%S_%f')
+        except Exception:
+            pass
+        return datetime.min
+
+    filtered_images = sorted(filtered_images, key=sort_key, reverse=True)
 
     # Calculate pagination
     total_images = len(filtered_images)
@@ -1439,8 +1467,8 @@ def index():
     page_range = list(range(page_range_start, page_range_end))
 
     # Get unique models and tags for filter dropdowns
-    all_models = list(set(img.get('model_name', '') for img in db if img.get('model_name')))
-    all_tags = list(set(tag for img in db for tag in img.get('content_tags', [])))
+    all_models = list(set(img.get('model_name', '') for img in working_list if img.get('model_name')))
+    all_tags = list(set(tag for img in working_list for tag in img.get('content_tags', [])))
 
     return render_template('gallery.html',
                            images=paginated_images,
@@ -1621,6 +1649,19 @@ def delete_image(image_id):
     """Delete an image and its database entry"""
     db = load_database()
 
+    # Preserve current filters and pagination from the form
+    model_filter = request.form.get('model', '').strip()
+    tag_filter = request.form.get('tag', '').strip()
+    search_term = request.form.get('search', '').strip()
+    try:
+        page = int(request.form.get('page', 1))
+    except Exception:
+        page = 1
+    try:
+        per_page = int(request.form.get('per_page', 30))
+    except Exception:
+        per_page = 30
+
     if 0 <= image_id < len(db):
         image = db[image_id]
         image_path = os.path.join(UPLOAD_FOLDER, image['filename'])
@@ -1637,7 +1678,35 @@ def delete_image(image_id):
     else:
         flash('Image not found', 'error')
 
-    return redirect(url_for('index'))
+    # After deletion, recompute total pages for the same filters and clamp page
+    # Build working list similar to index()
+    working_list = []
+    for original_index, image in enumerate(db):
+        item = dict(image)
+        item['_db_index'] = original_index
+        working_list.append(item)
+
+    filtered_images = working_list
+    if model_filter:
+        filtered_images = [img for img in filtered_images if model_filter.lower() in img.get('model_name', '').lower()]
+    if tag_filter:
+        filtered_images = [img for img in filtered_images if tag_filter.lower() in ' '.join(img.get('content_tags', [])).lower()]
+    if search_term:
+        filtered_images = [img for img in filtered_images if
+                           search_term.lower() in img.get('positive_prompt', '').lower() or
+                           search_term.lower() in img.get('negative_prompt', '').lower() or
+                           search_term.lower() in img.get('filename', '').lower()]
+
+    total_images = len(filtered_images)
+    total_pages = (total_images + per_page - 1) // per_page if per_page > 0 else 1
+    if total_pages < 1:
+        total_pages = 1
+    if page > total_pages:
+        page = total_pages
+    if page < 1:
+        page = 1
+
+    return redirect(url_for('index', model=model_filter or None, tag=tag_filter or None, search=search_term or None, page=page, per_page=per_page))
 
 
 @app.route('/reprocess-metadata')
