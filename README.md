@@ -25,7 +25,7 @@ A powerful Flask-based web application for managing, browsing, and organizing St
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/WhiskeyCoder/Stable-Diffusion-Gallery.git
    cd stable_difusion_browser
    ```
 
