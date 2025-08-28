@@ -96,8 +96,8 @@
 
     <div class="gallery-grid">
       {% for image in images %}
-        {# global index for routes that still rely on original ordering #}
-        {% set global_index = ((page - 1) * per_page) + loop.index0 %}
+        {# use original database index passed from backend for stable routing #}
+        {% set global_index = image._db_index %}
         <div class="image-card">
           <img src="{{ url_for('get_image', filename=image.filename) }}"
                class="image-preview"
@@ -149,6 +149,12 @@
                       action="{{ url_for('delete_image', image_id=global_index) }}"
                       style="display:inline;"
                       onsubmit="return confirm('Are you sure you want to delete this image?')">
+                  {# preserve current pagination and filters so delete can redirect back #}
+                  <input type="hidden" name="page" value="{{ page }}">
+                  <input type="hidden" name="per_page" value="{{ per_page }}">
+                  <input type="hidden" name="model" value="{{ current_model }}">
+                  <input type="hidden" name="tag" value="{{ current_tag }}">
+                  <input type="hidden" name="search" value="{{ current_search }}">
                   <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                     <i class="fas fa-trash"></i>
                   </button>
