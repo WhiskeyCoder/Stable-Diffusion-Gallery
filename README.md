@@ -113,6 +113,9 @@ stable_difusion_browser/
 3. Optionally specify model name and content tags
 4. The system will automatically extract metadata
 
+![image-view](images/image.png)
+
+
 ### Browsing the Gallery
 
 - **Main View**: Browse all images with thumbnails
