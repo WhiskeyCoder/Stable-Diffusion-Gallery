@@ -2,114 +2,175 @@
 
 {% block content %}
 <div class="filter-bar">
-    <div class="container">
-        <form method="GET" class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">Model Filter</label>
-                <select name="model" class="form-select">
-                    <option value="">All Models</option>
-                    {% for model in models %}
-                        <option value="{{ model }}" {% if model == current_model %}selected{% endif %}>{{ model }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Tag Filter</label>
-                <select name="tag" class="form-select">
-                    <option value="">All Tags</option>
-                    {% for tag in tags %}
-                        <option value="{{ tag }}" {% if tag == current_tag %}selected{% endif %}>{{ tag }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Search Prompts</label>
-                <input type="text" name="search" class="form-control" placeholder="Search in prompts..." value="{{ current_search }}">
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2">
-                    <i class="fas fa-search"></i> Filter
-                </button>
-                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-times"></i>
-                </a>
-            </div>
-        </form>
-    </div>
+  <div class="container">
+    <form method="GET" class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Model Filter</label>
+        <select name="model" class="form-select">
+          <option value="">All Models</option>
+          {% for model in models %}
+            <option value="{{ model }}" {% if model == current_model %}selected{% endif %}>{{ model }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Tag Filter</label>
+        <select name="tag" class="form-select">
+          <option value="">All Tags</option>
+          {% for tag in tags %}
+            <option value="{{ tag }}" {% if tag == current_tag %}selected{% endif %}>{{ tag }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Search Prompts</label>
+        <input type="text" name="search" class="form-control" placeholder="Search in prompts..." value="{{ current_search }}">
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">
+          <i class="fas fa-search"></i> Filter
+        </button>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary" title="Clear filters">
+          <i class="fas fa-times"></i>
+        </a>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div class="container-fluid">
-    {% if images %}
-        <div class="d-flex justify-content-between align-items-center p-3">
-            <h4>{{ images|length }} Images Found</h4>
+  {% set total = pagination.total if pagination else 0 %}
+  {% set page = pagination.page if pagination else 1 %}
+  {% set pages = pagination.total_pages if pagination else 1 %}
+  {% set per_page = pagination.per_page if pagination else 30 %}
+  {% set showing_start = ((page - 1) * per_page) + 1 if total > 0 else 0 %}
+  {% set showing_end = (page * per_page) if (page * per_page) < total else total %}
+
+  {% macro pager(page, pages, current_model, current_tag, current_search) -%}
+  <nav aria-label="Gallery pagination" class="my-3">
+    <ul class="pagination mb-0">
+      <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('index', model=current_model, tag=current_tag, search=current_search, page=1) }}" aria-label="First">« First</a>
+      </li>
+      <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('index', model=current_model, tag=current_tag, search=current_search, page=page-1) }}" aria-label="Previous">‹ Prev</a>
+      </li>
+
+      {# windowed page numbers #}
+      {% set window = 2 %}
+      {% set p_start = 1 if page - window < 1 else page - window %}
+      {% set p_end = pages if page + window > pages else page + window %}
+      {% if p_start > 1 %}
+        <li class="page-item"><a class="page-link" href="{{ url_for('index', model=current_model, tag=current_tag, search=current_search, page=1) }}">1</a></li>
+        {% if p_start > 2 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+      {% endif %}
+      {% for p in range(p_start, p_end + 1) %}
+        <li class="page-item {% if p == page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('index', model=current_model, tag=current_tag, search=current_search, page=p) }}">{{ p }}</a>
+        </li>
+      {% endfor %}
+      {% if p_end < pages %}
+        {% if p_end < pages - 1 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+        <li class="page-item"><a class="page-link" href="{{ url_for('index', model=current_model, tag=current_tag, search=current_search, page=pages) }}">{{ pages }}</a></li>
+      {% endif %}
+
+      <li class="page-item {% if page >= pages %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('index', model=current_model, tag=current_tag, search=current_search, page=page+1) }}" aria-label="Next">Next ›</a>
+      </li>
+      <li class="page-item {% if page >= pages %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('index', model=current_model, tag=current_tag, search=current_search, page=pages) }}" aria-label="Last">Last »</a>
+      </li>
+    </ul>
+  </nav>
+  {%- endmacro %}
+
+  {% if total > 0 %}
+    <div class="d-flex justify-content-between align-items-center p-3">
+      <h4>{{ total }} Images Found</h4>
+      <div class="text-muted">
+        Showing {{ showing_start }}–{{ showing_end }} of {{ total }}
+      </div>
+    </div>
+
+    {{ pager(page, pages, current_model, current_tag, current_search) }}
+
+    <div class="gallery-grid">
+      {% for image in images %}
+        {# global index for routes that still rely on original ordering #}
+        {% set global_index = ((page - 1) * per_page) + loop.index0 %}
+        <div class="image-card">
+          <img src="{{ url_for('get_image', filename=image.filename) }}"
+               class="image-preview"
+               alt="{{ image.original_filename }}"
+               onclick="window.location.href='{{ url_for('image_detail', image_id=global_index) }}'">
+
+          <div class="image-info">
+            <h6 class="card-title">{{ image.original_filename }}</h6>
+
+            {% if image.positive_prompt %}
+              <div class="prompt-text">
+                <strong>Prompt:</strong>
+                {{ image.positive_prompt[:100] }}{% if image.positive_prompt|length > 100 %}...{% endif %}
+              </div>
+            {% endif %}
+            
+            {% if image.raw_metadata_text %}
+              <div class="prompt-text" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 8px; margin: 5px 0; border-radius: 4px;">
+                <strong>Raw Metadata (Manual Parsing Required):</strong>
+                <small style="color: #856404;">{{ image.raw_metadata_text[:200] }}{% if image.raw_metadata_text|length > 200 %}...{% endif %}</small>
+              </div>
+            {% endif %}
+
+            <div class="metadata-tags">
+              {% if image.model_name %}
+                <span class="tag model-tag">{{ image.model_name }}</span>
+              {% endif %}
+              {% for tag in image.content_tags %}
+                <span class="tag">{{ tag }}</span>
+              {% endfor %}
+              {% if image.steps %}
+                <span class="tag" style="background: #6f42c1;">{{ image.steps }} steps</span>
+              {% endif %}
+              {% if image.sampler %}
+                <span class="tag" style="background: #fd7e14;">{{ image.sampler }}</span>
+              {% endif %}
+            </div>
+
+            <div class="d-flex justify-content-between mt-2">
+              <small class="text-muted">{{ image.upload_date[:10] }}</small>
+              <div>
+                <a href="{{ url_for('image_detail', image_id=global_index) }}" class="btn btn-sm btn-outline-primary" title="View">
+                  <i class="fas fa-eye"></i>
+                </a>
+                <a href="{{ url_for('edit_image', image_id=global_index) }}" class="btn btn-sm btn-outline-success" title="Edit">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <form method="POST"
+                      action="{{ url_for('delete_image', image_id=global_index) }}"
+                      style="display:inline;"
+                      onsubmit="return confirm('Are you sure you want to delete this image?')">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
         </div>
+      {% endfor %}
+    </div>
 
-        <div class="gallery-grid">
-            {% for image in images %}
-                <div class="image-card">
-                    <img src="{{ url_for('get_image', filename=image.filename) }}"
-                         class="image-preview"
-                         alt="{{ image.original_filename }}"
-                         onclick="window.location.href='{{ url_for('image_detail', image_id=loop.index0) }}'">
+    {{ pager(page, pages, current_model, current_tag, current_search) }}
 
-                    <div class="image-info">
-                        <h6 class="card-title">{{ image.original_filename }}</h6>
-
-                        {% if image.positive_prompt %}
-                            <div class="prompt-text">
-                                <strong>Prompt:</strong> {{ image.positive_prompt[:100] }}{% if image.positive_prompt|length > 100 %}...{% endif %}
-                            </div>
-                        {% endif %}
-
-                        <div class="metadata-tags">
-                            {% if image.model_name %}
-                                <span class="tag model-tag">{{ image.model_name }}</span>
-                            {% endif %}
-
-                            {% for tag in image.content_tags %}
-                                <span class="tag">{{ tag }}</span>
-                            {% endfor %}
-
-                            {% if image.steps %}
-                                <span class="tag" style="background: #6f42c1;">{{ image.steps }} steps</span>
-                            {% endif %}
-
-                            {% if image.sampler %}
-                                <span class="tag" style="background: #fd7e14;">{{ image.sampler }}</span>
-                            {% endif %}
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-2">
-                            <small class="text-muted">{{ image.upload_date[:10] }}</small>
-                            <div>
-                                <a href="{{ url_for('image_detail', image_id=loop.index0) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ url_for('edit_image', image_id=loop.index0) }}" class="btn btn-sm btn-outline-success">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form method="POST" action="{{ url_for('delete_image', image_id=loop.index0) }}"
-                                      style="display: inline;"
-                                      onsubmit="return confirm('Are you sure you want to delete this image?')">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center py-5">
-            <i class="fas fa-images fa-3x text-muted mb-3"></i>
-            <h4>No images found</h4>
-            <p class="text-muted">Upload some Stable Diffusion images to get started!</p>
-            <a href="{{ url_for('upload_image') }}" class="btn btn-primary">
-                <i class="fas fa-upload"></i> Upload Images
-            </a>
-        </div>
-    {% endif %}
+  {% else %}
+    <div class="text-center py-5">
+      <i class="fas fa-images fa-3x text-muted mb-3"></i>
+      <h4>No images found</h4>
+      <p class="text-muted">Upload some Stable Diffusion images to get started!</p>
+      <a href="{{ url_for('upload_image') }}" class="btn btn-primary">
+        <i class="fas fa-upload"></i> Upload Images
+      </a>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}
