@@ -59,6 +59,23 @@
                 </div>
             {% endif %}
             
+            {% if image.raw_metadata_text %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> Raw Metadata (Manual Parsing Required)</h6>
+                        <button class="btn btn-sm btn-outline-secondary" 
+                                onclick="copyToClipboard('{{ image.raw_metadata_text | replace('\n', '\\n') | replace('\'', '\\\'') }}', this)">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="prompt-display" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 0.9em; white-space: pre-wrap; max-height: 300px; overflow-y: auto;">
+                            {{ image.raw_metadata_text }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
             <div class="card">
                 <div class="card-header">
                     <h6 class="mb-0"><i class="fas fa-cogs"></i> Generation Parameters</h6>
@@ -96,12 +113,89 @@
                 </div>
             </div>
             
+            <!-- Raw Metadata Display -->
+            {% if image.raw_metadata_text %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> Raw Metadata (Manual Parsing Required)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="bg-light p-2 rounded" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
+                        {{ image.raw_metadata_text }}
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary mt-2" onclick="navigator.clipboard.writeText('{{ image.raw_metadata_text }}')">
+                        <i class="fas fa-copy"></i> Copy Raw Text
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if image.decoded_civitai_text %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-check-circle text-success"></i> Decoded CivitAI Text</h6>
+                </div>
+                <div class="card-body">
+                    <div class="bg-light p-2 rounded" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
+                        {{ image.decoded_civitai_text }}
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary mt-2" onclick="navigator.clipboard.writeText('{{ image.decoded_civitai_text }}')">
+                        <i class="fas fa-copy"></i> Copy Decoded Text
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Raw Database Information -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-database text-info"></i> Raw Database Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Image Details:</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Filename:</strong></td><td><code>{{ image.filename }}</code></td></tr>
+                                <tr><td><strong>Original Filename:</strong></td><td><code>{{ image.original_filename }}</code></td></tr>
+                                <tr><td><strong>Upload Date:</strong></td><td>{{ image.upload_date }}</td></tr>
+                                <tr><td><strong>File Hash:</strong></td><td><code>{{ image.file_hash }}</code></td></tr>
+                                <tr><td><strong>File Size:</strong></td><td>{{ (image.file_size / 1024) | round(1) }} KB</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Additional Fields:</h6>
+                            <table class="table table-sm">
+                                {% for key, value in image.items() %}
+                                    {% if key not in ['filename', 'original_filename', 'upload_date', 'file_hash', 'file_size', 'positive_prompt', 'negative_prompt', 'steps', 'sampler', 'cfg_scale', 'seed', 'size', 'model_hash', 'model', 'version', 'schedule_type', 'content_tags', 'model_name'] %}
+                                        <tr>
+                                            <td><strong>{{ key }}:</strong></td>
+                                            <td>
+                                                {% if value is string and value|length > 100 %}
+                                                    <code style="font-size: 0.8em;">{{ value[:100] }}...</code>
+                                                    <br><small class="text-muted">(Truncated - {{ value|length }} characters total)</small>
+                                                {% else %}
+                                                    <code>{{ value }}</code>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="mt-3 d-flex gap-2">
                 <a href="{{ url_for('index') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Gallery
                 </a>
                 <a href="{{ url_for('edit_image', image_id=image_id) }}" class="btn btn-success">
                     <i class="fas fa-edit"></i> Edit Metadata
+                </a>
+                <a href="{{ url_for('debug_metadata', filename=image.filename) }}" class="btn btn-info" target="_blank">
+                    <i class="fas fa-bug"></i> Debug Metadata
                 </a>
                 <form method="POST" action="{{ url_for('delete_image', image_id=image_id) }}"
                       style="display: inline;" 
