@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Image - SD Gallery{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-upload"></i> Upload Stable Diffusion Image</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="upload-zone">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <h5>Choose your SD image</h5>
+                            <p class="text-muted">PNG, JPG, JPEG, or WebP files supported</p>
+                            <input type="file" name="file" class="form-control" accept=".png,.jpg,.jpeg,.webp" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="model_name" class="form-label">Model Name</label>
+                            <input type="text" class="form-control" id="model_name" name="model_name" 
+                                   placeholder="e.g., Stable Diffusion 1.5, SDXL, etc.">
+                            <div class="form-text">The AI model used to generate this image</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="content_tags" class="form-label">Content Tags</label>
+                            <input type="text" class="form-control" id="content_tags" name="content_tags" 
+                                   placeholder="portrait, landscape, anime, realistic, etc.">
+                            <div class="form-text">Comma-separated tags to describe the image content</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> The app will automatically extract prompt data and generation parameters from the image metadata if available.
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Gallery
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Upload Image
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Upload Tips Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-lightbulb"></i> Upload Tips</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Supported Formats:</h6>
+                            <ul class="small">
+                                <li><strong>PNG:</strong> Best for metadata extraction</li>
+                                <li><strong>JPG/JPEG:</strong> Smaller file sizes</li>
+                                <li><strong>WebP:</strong> Modern format support</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>What Gets Extracted:</h6>
+                            <ul class="small">
+                                <li>Positive and negative prompts</li>
+                                <li>Generation parameters (steps, sampler, CFG)</li>
+                                <li>Seed and model information</li>
+                                <li>Image dimensions</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add drag and drop functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadZone = document.querySelector('.upload-zone');
+    const fileInput = document.querySelector('input[type="file"]');
+    
+    // Drag and drop events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight() {
+        uploadZone.style.borderColor = '#007bff';
+        uploadZone.style.backgroundColor = '#f8f9ff';
+    }
+    
+    function unhighlight() {
+        uploadZone.style.borderColor = '#ccc';
+        uploadZone.style.backgroundColor = 'white';
+    }
+    
+    uploadZone.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            fileInput.files = files;
+            updateFileLabel(files[0].name);
+        }
+    }
+    
+    // Update file input label
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            updateFileLabel(this.files[0].name);
+        }
+    });
+    
+    function updateFileLabel(filename) {
+        const label = uploadZone.querySelector('h5');
+        label.textContent = `Selected: ${filename}`;
+        label.style.color = '#007bff';
+    }
+});
+</script>
+{% endblock %}

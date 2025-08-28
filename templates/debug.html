@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Debug Metadata - SD Gallery{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2><i class="fas fa-bug"></i> Metadata Debug Tool</h2>
+    <p class="text-muted">Use this tool to troubleshoot metadata extraction from your images.</p>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-search"></i> Metadata Inspector</h5>
+                </div>
+                <div class="card-body">
+                    <p>Click on any image below to see its raw metadata and how it's being parsed:</p>
+                    
+                    {% if images %}
+                        <div class="row">
+                            {% for image in images[:10] %}
+                                <div class="col-md-3 mb-3">
+                                    <div class="card">
+                                        <img src="{{ url_for('get_image', filename=image.filename) }}" 
+                                             class="card-img-top" 
+                                             style="height: 150px; object-fit: cover;"
+                                             alt="{{ image.original_filename }}">
+                                        <div class="card-body p-2">
+                                            <h6 class="card-title small">{{ image.original_filename[:20] }}{% if image.original_filename|length > 20 %}...{% endif %}</h6>
+                                            <button class="btn btn-sm btn-primary" 
+                                                    onclick="debugMetadata('{{ image.filename }}')">
+                                                <i class="fas fa-search"></i> Debug
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            No images uploaded yet. <a href="{{ url_for('upload_image') }}">Upload some images</a> to debug their metadata.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Debug Results -->
+    <div id="debugResults" class="row" style="display: none;">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-code"></i> Metadata Analysis Results</h5>
+                    <small class="text-muted">Filename: <span id="debugFilename"></span></small>
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="debugTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw" type="button">
+                                Raw Metadata
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="parsed-tab" data-bs-toggle="tab" data-bs-target="#parsed" type="button">
+                                Parsed Results
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="fileinfo-tab" data-bs-toggle="tab" data-bs-target="#fileinfo" type="button">
+                                File Info
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content mt-3" id="debugTabContent">
+                        <div class="tab-pane fade show active" id="raw" role="tabpanel">
+                            <h6>All available metadata fields in the image:</h6>
+                            <pre id="rawMetadata" class="bg-light p-3" style="max-height: 400px; overflow-y: auto;"></pre>
+                        </div>
+                        <div class="tab-pane fade" id="parsed" role="tabpanel">
+                            <h6>How the metadata was parsed by our system:</h6>
+                            <pre id="parsedMetadata" class="bg-light p-3" style="max-height: 400px; overflow-y: auto;"></pre>
+                        </div>
+                        <div class="tab-pane fade" id="fileinfo" role="tabpanel">
+                            <h6>File information:</h6>
+                            <pre id="fileInfo" class="bg-light p-3"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Troubleshooting Guide -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-wrench"></i> Troubleshooting Guide</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Supported Tools & Formats:</h6>
+                            <ul class="small">
+                                <li><strong>AUTOMATIC1111:</strong> "parameters" field in PNG</li>
+                                <li><strong>ComfyUI:</strong> "workflow" or "prompt" JSON fields</li>
+                                <li><strong>InvokeAI:</strong> "invokeai_metadata" or "sd-metadata"</li>
+                                <li><strong>NovelAI:</strong> "Comment" field with JSON data</li>
+                                <li><strong>Generic:</strong> Common field names (prompt, negative, steps, etc.)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Common Issues:</h6>
+                            <ul class="small">
+                                <li><strong>No metadata found:</strong> Image may be compressed or from unsupported tool</li>
+                                <li><strong>Partial metadata:</strong> Tool stores data differently than expected</li>
+                                <li><strong>JPEG images:</strong> Often lose PNG metadata during conversion</li>
+                                <li><strong>Downloaded images:</strong> May have metadata stripped by websites</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="fas fa-lightbulb"></i> Tips:</h6>
+                        <ul class="mb-0 small">
+                            <li>Always save as PNG from your SD tool to preserve maximum metadata</li>
+                            <li>Use the debug tool above to see exactly what metadata is available</li>
+                            <li>If metadata isn't detected, check the raw metadata tab for field names</li>
+                            <li>Different tools may use different field names for the same data</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function debugMetadata(filename) {
+    document.getElementById('debugFilename').textContent = filename;
+    
+    fetch(`/debug-metadata/${filename}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('rawMetadata').textContent = JSON.stringify(data.raw_metadata, null, 2);
+            document.getElementById('parsedMetadata').textContent = JSON.stringify(data.parsed_metadata, null, 2);
+            document.getElementById('fileInfo').textContent = JSON.stringify(data.file_info, null, 2);
+            
+            document.getElementById('debugResults').style.display = 'block';
+            document.getElementById('debugResults').scrollIntoView({ behavior: 'smooth' });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading metadata: ' + error);
+        });
+}
+</script>
+{% endblock %}

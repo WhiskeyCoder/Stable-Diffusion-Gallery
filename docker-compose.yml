@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  sd-gallery:
+    build: .
+    container_name: stable-diffusion-gallery
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount gallery images directory for persistence
+      - ./gallery_images:/app/gallery_images
+      # Mount database file for persistence
+      - ./image_database.json:/app/image_database.json
+      # Mount templates for easy customization
+      - ./templates:/app/templates
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=sd_gallery_app.py
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - sd-gallery-network
+
+  # Optional: Add a reverse proxy with nginx for production use
+  nginx:
+    image: nginx:alpine
+    container_name: sd-gallery-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - sd-gallery
+    restart: unless-stopped
+    networks:
+      - sd-gallery-network
+    profiles:
+      - production
+
+networks:
+  sd-gallery-network:
+    driver: bridge
+
+volumes:
+  gallery_data:
+    driver: local

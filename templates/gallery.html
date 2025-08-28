@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="filter-bar">
+    <div class="container">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Model Filter</label>
+                <select name="model" class="form-select">
+                    <option value="">All Models</option>
+                    {% for model in models %}
+                        <option value="{{ model }}" {% if model == current_model %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tag Filter</label>
+                <select name="tag" class="form-select">
+                    <option value="">All Tags</option>
+                    {% for tag in tags %}
+                        <option value="{{ tag }}" {% if tag == current_tag %}selected{% endif %}>{{ tag }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Search Prompts</label>
+                <input type="text" name="search" class="form-control" placeholder="Search in prompts..." value="{{ current_search }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="container-fluid">
+    {% if images %}
+        <div class="d-flex justify-content-between align-items-center p-3">
+            <h4>{{ images|length }} Images Found</h4>
+        </div>
+
+        <div class="gallery-grid">
+            {% for image in images %}
+                <div class="image-card">
+                    <img src="{{ url_for('get_image', filename=image.filename) }}"
+                         class="image-preview"
+                         alt="{{ image.original_filename }}"
+                         onclick="window.location.href='{{ url_for('image_detail', image_id=loop.index0) }}'">
+
+                    <div class="image-info">
+                        <h6 class="card-title">{{ image.original_filename }}</h6>
+
+                        {% if image.positive_prompt %}
+                            <div class="prompt-text">
+                                <strong>Prompt:</strong> {{ image.positive_prompt[:100] }}{% if image.positive_prompt|length > 100 %}...{% endif %}
+                            </div>
+                        {% endif %}
+
+                        <div class="metadata-tags">
+                            {% if image.model_name %}
+                                <span class="tag model-tag">{{ image.model_name }}</span>
+                            {% endif %}
+
+                            {% for tag in image.content_tags %}
+                                <span class="tag">{{ tag }}</span>
+                            {% endfor %}
+
+                            {% if image.steps %}
+                                <span class="tag" style="background: #6f42c1;">{{ image.steps }} steps</span>
+                            {% endif %}
+
+                            {% if image.sampler %}
+                                <span class="tag" style="background: #fd7e14;">{{ image.sampler }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-2">
+                            <small class="text-muted">{{ image.upload_date[:10] }}</small>
+                            <div>
+                                <a href="{{ url_for('image_detail', image_id=loop.index0) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('edit_image', image_id=loop.index0) }}" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('delete_image', image_id=loop.index0) }}"
+                                      style="display: inline;"
+                                      onsubmit="return confirm('Are you sure you want to delete this image?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-images fa-3x text-muted mb-3"></i>
+            <h4>No images found</h4>
+            <p class="text-muted">Upload some Stable Diffusion images to get started!</p>
+            <a href="{{ url_for('upload_image') }}" class="btn btn-primary">
+                <i class="fas fa-upload"></i> Upload Images
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

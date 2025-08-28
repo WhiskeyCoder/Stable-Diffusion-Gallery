@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics - SD Gallery{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2><i class="fas fa-chart-bar"></i> Gallery Statistics</h2>
+    
+    {% if stats %}
+        <!-- Overview Cards -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <i class="fas fa-images fa-2x mb-2"></i>
+                    <h3>{{ stats.total_images }}</h3>
+                    <p class="mb-0">Total Images</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <i class="fas fa-hdd fa-2x mb-2"></i>
+                    <h3>{{ stats.total_size_mb }} MB</h3>
+                    <p class="mb-0">Total Storage</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <i class="fas fa-robot fa-2x mb-2"></i>
+                    <h3>{{ stats.models|length }}</h3>
+                    <p class="mb-0">AI Models</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <i class="fas fa-tags fa-2x mb-2"></i>
+                    <h3>{{ stats.tags|length }}</h3>
+                    <p class="mb-0">Unique Tags</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detailed Statistics -->
+        <div class="row mt-4">
+            <!-- Models Used -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-robot"></i> Models Used</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if stats.models %}
+                            {% for model, count in stats.models.items() %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>{{ model or 'Unknown' }}</span>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-primary me-2">{{ count }}</span>
+                                        <div class="progress" style="width: 100px; height: 8px;">
+                                            <div class="progress-bar" style="width: {{ (count / stats.total_images * 100) }}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No model data available</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Popular Tags -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-tags"></i> Popular Tags</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if stats.tags %}
+                            {% for tag, count in stats.tags.items()[:10] %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>{{ tag }}</span>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-success me-2">{{ count }}</span>
+                                        <div class="progress" style="width: 100px; height: 8px;">
+                                            <div class="progress-bar bg-success" style="width: {{ (count / stats.total_images * 100) }}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No tags available</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Information -->
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle"></i> Gallery Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>Average File Size:</strong></td>
+                                        <td>{{ stats.avg_file_size_mb }} MB</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Database File:</strong></td>
+                                        <td><code>image_database.json</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Images Directory:</strong></td>
+                                        <td><code>gallery_images/</code></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>File Type Distribution:</h6>
+                                <div class="mb-2">
+                                    <small class="text-muted">PNG files contain the most metadata</small>
+                                </div>
+                                <!-- You could add file type stats here if needed -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-lightbulb"></i> Tips & Tricks</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="small mb-0">
+                            <li>Use descriptive model names for better organization</li>
+                            <li>Add relevant content tags to improve filtering</li>
+                            <li>PNG files preserve the most metadata</li>
+                            <li>Duplicate images are detected by file hash</li>
+                            <li>Click any image for full prompt details</li>
+                            <li>Use the copy button to reuse prompts</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <a href="{{ url_for('upload_image') }}" class="btn btn-primary me-3">
+                            <i class="fas fa-upload"></i> Upload New Images
+                        </a>
+                        <a href="{{ url_for('index') }}" class="btn btn-success me-3">
+                            <i class="fas fa-th"></i> Browse Gallery
+                        </a>
+                        <button class="btn btn-outline-info" onclick="refreshStats()">
+                            <i class="fas fa-sync-alt"></i> Refresh Statistics
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-5">
+            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+            <h4>No statistics available</h4>
+            <p class="text-muted">Upload some images to see statistics!</p>
+            <a href="{{ url_for('upload_image') }}" class="btn btn-primary">
+                <i class="fas fa-upload"></i> Upload Images
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function refreshStats() {
+    window.location.reload();
+}
+
+// Add some visual enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate progress bars
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.transition = 'width 0.8s ease-in-out';
+            bar.style.width = width;
+        }, 100);
+    });
+    
+    // Add hover effects to stats cards
+    const statsCards = document.querySelectorAll('.stats-card');
+    statsCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

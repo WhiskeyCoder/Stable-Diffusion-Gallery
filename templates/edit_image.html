@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ image.original_filename }} - SD Gallery{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <img src="{{ url_for('get_image', filename=image.filename) }}" 
+                     class="card-img-top" 
+                     alt="{{ image.original_filename }}"
+                     style="max-height: 400px; object-fit: contain;">
+                <div class="card-body">
+                    <h5 class="card-title">{{ image.original_filename }}</h5>
+                    <p class="text-muted">
+                        <small>
+                            <i class="fas fa-calendar"></i> Uploaded: {{ image.upload_date[:19].replace('T', ' ') }}<br>
+                            <i class="fas fa-file"></i> Size: {{ "%.1f"|format(image.file_size/1024/1024) }} MB
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-edit"></i> Edit Image Metadata</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="model_name" class="form-label">Model Name</label>
+                            <input type="text" class="form-control" id="model_name" name="model_name" 
+                                   value="{{ image.model_name or '' }}" 
+                                   placeholder="e.g., Stable Diffusion 1.5, SDXL, etc.">
+                            <div class="form-text">The AI model used to generate this image</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="content_tags" class="form-label">Content Tags</label>
+                            <input type="text" class="form-control" id="content_tags" name="content_tags" 
+                                   value="{{ image.content_tags | join(', ') if image.content_tags else '' }}" 
+                                   placeholder="portrait, landscape, anime, realistic, etc.">
+                            <div class="form-text">Comma-separated tags to describe the image content</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="positive_prompt" class="form-label">Positive Prompt</label>
+                            <textarea class="form-control" id="positive_prompt" name="positive_prompt" 
+                                      rows="4" placeholder="Edit the positive prompt...">{{ image.positive_prompt or '' }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="negative_prompt" class="form-label">Negative Prompt</label>
+                            <textarea class="form-control" id="negative_prompt" name="negative_prompt" 
+                                      rows="3" placeholder="Edit the negative prompt...">{{ image.negative_prompt or '' }}</textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{{ url_for('image_detail', image_id=image_id) }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Cancel
+                                </a>
+                                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary ms-2">
+                                    <i class="fas fa-th"></i> Gallery
+                                </a>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Current Generation Parameters -->
+            {% if image.steps or image.sampler or image.cfg_scale %}
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-cogs"></i> Current Generation Parameters</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-sm">
+                            {% if image.steps %}
+                                <div class="col-md-4">
+                                    <strong>Steps:</strong> {{ image.steps }}
+                                </div>
+                            {% endif %}
+                            {% if image.sampler %}
+                                <div class="col-md-4">
+                                    <strong>Sampler:</strong> {{ image.sampler }}
+                                </div>
+                            {% endif %}
+                            {% if image.cfg_scale %}
+                                <div class="col-md-4">
+                                    <strong>CFG:</strong> {{ image.cfg_scale }}
+                                </div>
+                            {% endif %}
+                            {% if image.seed %}
+                                <div class="col-md-4">
+                                    <strong>Seed:</strong> {{ image.seed }}
+                                </div>
+                            {% endif %}
+                            {% if image.size %}
+                                <div class="col-md-4">
+                                    <strong>Size:</strong> {{ image.size }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
