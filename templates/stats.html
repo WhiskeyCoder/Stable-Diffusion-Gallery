@@ -164,6 +164,14 @@
                         <a href="{{ url_for('index') }}" class="btn btn-success me-3">
                             <i class="fas fa-th"></i> Browse Gallery
                         </a>
+                        <a href="{{ url_for('clean_database') }}" class="btn btn-outline-warning me-3" 
+                           onclick="return confirm('This will remove raw EXIF fields from the database. Continue?')">
+                            <i class="fas fa-broom"></i> Clean Database
+                        </a>
+                        <a href="{{ url_for('reprocess_metadata') }}" class="btn btn-warning me-3" 
+                           onclick="return confirm('This will reprocess metadata for all existing images. Continue?')">
+                            <i class="fas fa-magic"></i> Reprocess Metadata
+                        </a>
                         <button class="btn btn-outline-info" onclick="refreshStats()">
                             <i class="fas fa-sync-alt"></i> Refresh Statistics
                         </button>
